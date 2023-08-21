@@ -61,7 +61,7 @@ def watsonx(
     max_tokens=500,
     n=1,
     stop=None,
-    k=1,
+    k=50,
 ) -> list:
     params = GenerateParams(
         decoding_method="sample",

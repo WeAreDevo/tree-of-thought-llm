@@ -1,19 +1,19 @@
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 
 
 class Beluga:
     def __init__(self, name) -> None:
         self.name = name
-        self._gptq_text_generation_pipeline()
+        self.text_generartion_pipeline()
 
     def _gptq_text_generation_pipeline(self):
         tokenizer = AutoTokenizer.from_pretrained(self.name, use_fast=True)
-
+        model_basename = "model"
         model = AutoGPTQForCausalLM.from_quantized(
             self.name,
-            model_basename="gptq_model-4bit-128g",
+            model_basename=model_basename,
             quantize_config=None,
             use_safetensors=True,
             trust_remote_code=True,
@@ -24,9 +24,14 @@ class Beluga:
             model=model,
             tokenizer=tokenizer,
             return_full_text=False,
-            device_map="auto",
+            device="cuda:0",
             quantize_config=None,
         )
+
+    def text_generartion_pipeline(self):
+        self.pipe = pipeline("text-generation", model=self.name,
+            return_full_text=False,
+            device="cuda:0",)
 
     def generate(
         self,
@@ -44,9 +49,10 @@ class Beluga:
             temperature=temperature,
             top_k=k,
         )
-        return [r.generated_text for r in responses]
+        return [r['generated_text'] for r in responses]
 
 
 if __name__ == "__main__":
-    model = Beluga("TheBloke/StableBeluga-13B-GPTQ")
-    model.generate("Hello, ")
+    model = Beluga("Open-Orca/OpenOrca-Platypus2-13B")
+    r = model.generate("Hello, ", n=2, max_tokens=10)
+    print(r)
