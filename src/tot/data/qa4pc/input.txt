@@ -1,0 +1,3 @@
+Policy: "## Inheriting Additional State Pension\n\nYou might inherit part of your deceased partner\u2019s Additional State Pension if your marriage or civil partnership with them began before 6 April 2016 and one of the following applies:\n\n* your partner reached State Pension age before 6 April 2016\n* they died before 6 April 2016 but would have reached State Pension age on or after that date"
+Input question: Could I inherit part of my deceased partner\u2019s Additional State Pension?
+Decomposition: Based on the policy, I first need to answer the following basic questions:

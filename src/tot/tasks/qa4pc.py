@@ -3,7 +3,7 @@ import os
 import sympy
 import pandas as pd
 from tot.tasks.base import Task, DATA_PATH
-from tot.prompts.game24 import *
+from tot.prompts.qa4pc import *
 
 
 def get_current_numbers(y: str) -> str:
@@ -11,38 +11,41 @@ def get_current_numbers(y: str) -> str:
     return last_line.split("left: ")[-1].split(")")[0]
 
 
-class Game24Task(Task):
-    """
-    Input (x)   : a string of 4 numbers
-    Output (y)  : a trajectory of 3 steps to reach 24
-    Reward (r)  : 0 or 1, depending on whether the trajectory is correct
-    Input Example:
-        1 2 3 4
-    Output Example:
-        1 + 2 = 3 (left: 3 3 4)
-        3 + 3 = 6 (left: 4 6)
-        6 * 4 = 24 (left: 24)
-        (1 + 2 + 3) * 4 = 24
-    """
-
+class QA4PC(Task):
     def __init__(self, file="input.txt"):
         """
         file: a text file, each line is some sentences
         """
         super().__init__()
-        path = os.path.join(DATA_PATH, "text", file)
-        self.data = open(path).readlines()
+        path = os.path.join(DATA_PATH, "qa4pc", file)
+        self.data = open(path).read()
         self.steps = 2
-        self.stops = ["\nPassage:\n", None]
+        self.stops = ["\nLOGIC:", "[STOP]"]
 
     def __len__(self) -> int:
         return len(self.data)
 
     def get_input(self, idx: int) -> str:
-        return self.data[idx]
+        return self.data
 
     def test_output(self, idx: int, output: str):
-        return {"r": 0}
+        output = output.split("Passage:\n")[-1]
+        prompt = score_prompt + output
+        score_outputs = watsonx(prompt, n=5)
+        scores = []
+        for score_output in score_outputs:
+            # print(score_output)
+            pattern = r".*coherency score is (\d+).*"
+            match = re.match(pattern, score_output, re.DOTALL)
+            if match:
+                score = int(match.groups()[0])
+                scores.append(score)
+            else:
+                print(f"------------------score no match: {[score_output]}")
+        print(scores)
+        # print('------------')
+        info = {"rs": scores, "r": sum(scores) / len(scores) if scores else 0}
+        return info
 
     @staticmethod
     def standard_prompt_wrap(x: str, y: str = "") -> str:
@@ -53,32 +56,43 @@ class Game24Task(Task):
         return cot_prompt.format(input=x) + y
 
     @staticmethod
-    def propose_prompt_wrap(x: str, y: str = "") -> str:
-        current_numbers = get_current_numbers(y if y else x)
-        if current_numbers == "24":
-            prompt = cot_prompt.format(input=x) + "Steps:" + y
-            # print([prompt])
-        else:
-            prompt = propose_prompt.format(input=current_numbers)
+    def vote_prompt_wrap(x: str, ys: list) -> str:
+        prompt = vote_prompt
+        for i, y in enumerate(ys, 1):
+            # y = y.replace('Plan:\n', '')
+            # TODO: truncate the plan part?
+            prompt += f"Choice {i}:\n{y}\n"
         return prompt
 
     @staticmethod
-    def value_prompt_wrap(x: str, y: str) -> str:
-        last_line = y.strip().split("\n")[-1]
-        if "left: " not in last_line:  # last step
-            ans = last_line.lower().replace("answer: ", "")
-            # print([value_last_step_prompt.format(input=x, answer=ans)])
-            return value_last_step_prompt.format(input=x, answer=ans)
-        current_numbers = get_current_numbers(y)
-        return value_prompt.format(input=current_numbers)
+    def vote_outputs_unwrap(vote_outputs: list, n_candidates: int) -> list:
+        vote_results = [0] * n_candidates
+        for vote_output in vote_outputs:
+            pattern = r".*best choice is .*(\d+).*"
+            match = re.match(pattern, vote_output, re.DOTALL)
+            if match:
+                vote = int(match.groups()[0]) - 1
+                if vote in range(n_candidates):
+                    vote_results[vote] += 1
+            else:
+                print(f"vote no match: {[vote_output]}")
+        return vote_results
 
     @staticmethod
-    def value_outputs_unwrap(x: str, y: str, value_outputs: list) -> float:
-        if len(y.strip().split("\n")) == 4 and "answer" not in y.lower():
+    def compare_prompt_wrap(x: str, ys: list) -> str:
+        assert len(ys) == 2, "compare prompt only supports 2 candidates"
+        ys = [y.split("Passage:\n")[-1] for y in ys]
+        prompt = compare_prompt + f"Passage 1:\n{ys[0]}\n\nPassage 2:\n{ys[1]}\n"
+        return prompt
+
+    @staticmethod
+    def compare_output_unwrap(compare_output: str):
+        if "more coherent passage is 1" in compare_output:
             return 0
-        value_names = [_.split("\n")[-1] for _ in value_outputs]
-        value_map = {"impossible": 0.001, "likely": 1, "sure": 20}  # TODO: ad hoc
-        value = sum(
-            value * value_names.count(name) for name, value in value_map.items()
-        )
-        return value
+        elif "more coherent passage is 2" in compare_output:
+            return 1
+        elif "two passages are similarly coherent" in compare_output:
+            return 0.5
+        else:
+            print(f"-----------------compare no match: {[compare_output]}")
+            return -1

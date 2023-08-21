@@ -8,7 +8,7 @@ def get_value(task, x, y, n_evaluate_sample, cache_value=True):
     value_prompt = task.value_prompt_wrap(x, y)
     if cache_value and value_prompt in task.value_cache:
         return task.value_cache[value_prompt]
-    value_outputs = watsonx(value_prompt, n=n_evaluate_sample, stop=None)
+    value_outputs = watsonx(value_prompt, n=n_evaluate_sample)
     value = task.value_outputs_unwrap(x, y, value_outputs)
     if cache_value:
         task.value_cache[value_prompt] = value
@@ -30,14 +30,14 @@ def get_values(task, x, ys, n_evaluate_sample, cache_value=True):
 
 def get_votes(task, x, ys, n_evaluate_sample):
     vote_prompt = task.vote_prompt_wrap(x, ys)
-    vote_outputs = watsonx(vote_prompt, n=n_evaluate_sample, stop=None)
+    vote_outputs = watsonx(vote_prompt, n=n_evaluate_sample)
     values = task.vote_outputs_unwrap(vote_outputs, len(ys))
     return values
 
 
 def get_proposals(task, x, y):
     propose_prompt = task.propose_prompt_wrap(x, y)
-    proposals = watsonx(propose_prompt, n=1, stop=None)[0].split("\n")
+    proposals = watsonx(propose_prompt, n=1)[0].split("\n")
     return [y + _ + "\n" for _ in proposals]
 
 
@@ -124,5 +124,5 @@ def naive_solve(args, task, idx, to_print=True):
     watsonx = partial(watsonx, model=args.backend, temperature=args.temperature)
     print(watsonx)
     x = task.get_input(idx)  # input
-    ys = get_samples(task, x, "", args.n_generate_sample, args.prompt_sample, stop=None)
+    ys = get_samples(task, x, "", args.n_generate_sample, args.prompt_sample)
     return ys, {}

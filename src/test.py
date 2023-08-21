@@ -1,21 +1,21 @@
 import argparse
 from tot.methods.bfs_watsonx import solve
-from tot.tasks.game24 import Game24Task
+from tot.tasks.qa4pc import QA4PC
 
 args = argparse.Namespace(
     backend="meta-llama/llama-2-70b-chat",
     temperature=0.7,
-    task="game24",
+    task="qa4pc",
     naive_run=False,
-    prompt_sample=None,
-    method_generate="propose",
-    method_evaluate="value",
+    prompt_sample="cot",
+    method_generate="sample",
+    method_evaluate="vote",
     method_select="greedy",
-    n_generate_sample=1,
+    n_generate_sample=3,
     n_evaluate_sample=3,
-    n_select_sample=5,
+    n_select_sample=1,
 )
 
-task = Game24Task()
-ys, infos = solve(args, task, 900)
+task = QA4PC()
+ys, infos = solve(args, task, 0)
 print(ys[0])

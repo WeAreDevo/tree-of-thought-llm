@@ -57,10 +57,10 @@ creds = Credentials(api_key, api_endpoint="https://bam-api.res.ibm.com/v1")
 def watsonx(
     prompt,
     model="meta-llama/llama-2-70b-chat",
-    temperature=0.7,
-    max_tokens=500,
+    temperature=1,
+    max_tokens=300,
     n=1,
-    stop=None,
+    stop="[NOSTOP]",
     k=50,
 ) -> list:
     params = GenerateParams(
@@ -71,7 +71,7 @@ def watsonx(
         temperature=temperature,
         top_k=k,
         top_p=1,
-        stop_sequences=["[STOP]"],
+        stop_sequences=[stop],
     )
     llm = Model(model=model, params=params, credentials=creds)
     responses = llm.generate([prompt] * n)
@@ -79,28 +79,4 @@ def watsonx(
 
 
 if __name__ == "__main__":
-    # make sure you have a .env file under genai root with
-    # GENAI_KEY=<your-genai-key>
-    # GENAI_API=<genai-api-endpoint>
-    params = GenerateParams(
-        decoding_method="sample",
-        max_new_tokens=100,
-        min_new_tokens=1,
-        stream=False,
-        temperature=0.7,
-        top_k=50,
-        top_p=1,
-        stop_sequences=["[STOP]"],
-    )
-
-    creds = Credentials(api_key, api_endpoint="https://bam-api.res.ibm.com/v1")
-    code_explainer = Model(
-        "meta-llama/llama-2-70b-chat", params=params, credentials=creds
-    )
-
-    prompt = "Hello, what is yor name"
-    print(prompt + "\n")
-    responses = code_explainer.generate([prompt])[0].generated_text
-    print(responses)
-    # for response in responses:
-    #     print(f"Generated text:\n {response.generated_text}")
+    print(watsonx("Hello, ", n=2))
