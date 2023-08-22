@@ -13,7 +13,7 @@ args = argparse.Namespace(
     method_select="greedy",
     n_generate_sample=3,
     n_evaluate_sample=3,
-    n_select_sample=1,
+    n_select_sample=2,
 )
 
 task = QA4PC()

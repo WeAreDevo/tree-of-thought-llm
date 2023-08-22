@@ -57,7 +57,7 @@ class QA4PC(Task):
 
     @staticmethod
     def vote_prompt_wrap(x: str, ys: list) -> str:
-        prompt = vote_prompt
+        prompt = vote_prompt.format(input=x)
         for i, y in enumerate(ys, 1):
             # y = y.replace('Plan:\n', '')
             # TODO: truncate the plan part?

@@ -188,20 +188,14 @@ LOGIC: (QO AND Q1 AND Q2 AND Q3 AND Q5) OR (Q0 AND Q1 AND Q2 AND Q4 AND Q6)
 """
 
 # 1-shot
-propose_prompt = """Input: 2 8 8 14
-Possible next steps:
-2 + 8 = 10 (left: 8 10 14)
-8 / 2 = 4 (left: 4 8 14)
-14 + 2 = 16 (left: 8 8 16)
-2 * 8 = 16 (left: 8 14 16)
-8 - 2 = 6 (left: 6 8 14)
-14 - 8 = 6 (left: 2 6 8)
-14 /  2 = 7 (left: 7 8 8)
-14 - 2 = 12 (left: 8 8 12)
-Input: {input}
-Possible next steps:
+propose_prompt = """
 """
-vote_prompt = """Given an instruction and several choices, decide which choice is most promising. Analyze each choice in detail, then conclude in the last line "The best choice is {s}", where s the integer id of the choice.
+vote_prompt = """Consider the following policy text and input question which the rules in the policy should allow us to answer.
+{input}
+
+Given several choices for the logical decomposition of the policy into basic yes/no questions relevant to answering the input question, decide which choice is most promising. Rationally analyse each choice in detail, then conclude in the last line "The best choice is s", where s the integer id of the choice.
+
+Analysis:
 """
 
 compare_prompt = """Briefly analyze the coherency of the following two passages. Conclude in the last line "The more coherent passage is 1", "The more coherent passage is 2", or "The two passages are similarly coherent".
